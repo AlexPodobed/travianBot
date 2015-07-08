@@ -1,7 +1,21 @@
 'use strict';
 
-console.log('\'Allo \'Allo! Content a');
+console.info('content script loaded');
 
+function matchUrl(pathname, search, callback){
+    var expression1 = (pathname) ? (location.pathname.indexOf(pathname) >= 0) : true ;
+    var expression2 = (search) ? (location.search.indexOf(search) >= 0) : true ;
+
+    if(expression1 && expression2){
+        callback.apply(null, arguments)
+    }
+}
+
+
+matchUrl('build.php', '', Build.renderAddtoQueueBtn);
+matchUrl('', '', function(){
+    Build.generateList();
+});
 // One-Time Requests (Fire event 'dom-loaded')
 
 window.addEventListener("load", function() {
@@ -15,16 +29,14 @@ window.addEventListener("load", function() {
 
 
 
-
-
-
-
 //  Long-Lived Connections
 
 
 var port = chrome.runtime.connect({name: "my-channel"});
-
+// send message
 port.postMessage({myProperty: "value"});
+
+// listen for message
 port.onMessage.addListener(function(msg) {
   console.log('From background:',msg)
 });
