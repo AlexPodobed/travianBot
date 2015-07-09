@@ -12,14 +12,19 @@ chrome.tabs.onUpdated.addListener(function (tabId) {
 
 var i = 0;
 var temp_arr = [];
-// One-Time Requests (listening for event names 'dom-loaded')
+
+
+
 function sendMessage(event, data) {
-    chrome.extension.sendMessage({
+    chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
+      chrome.tabs.sendMessage(tabs[0].id, {
         type: event,
         data: data
+      });
     });
 }
 
+// One-Time Requests (listening for event names 'dom-loaded')
 chrome.extension.onMessage.addListener(function (request, sender, sendResponse) {
 
     switch (request.type) {
@@ -28,23 +33,13 @@ chrome.extension.onMessage.addListener(function (request, sender, sendResponse) 
             temp_arr.push(request.data);
             console.log(temp_arr)
             break;
+        case "tb-remove-from-queue":
+            console.log('remove element, array:', request.data)
+            temp_arr = request.data;
         case "tb-get-queue-list":
-            console.log('1')
-//            sendMessage('tb-send-queue-list', temp_arr);
-            chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
+            sendMessage("tb-send-queue-list", temp_arr);
+            break;
 
-                chrome.tabs.sendMessage(tabs[0].id, {type: "tb-send-queue-list", data: temp_arr}, function(response) {});
-            });
-            /*chrome.tabs.sendMessage({
-             type: "tb-send-queue-list",
-             data: {
-             myProperty: "ololo11212"
-             }
-             });*/
-            break;
-        case "dom-loaded":
-            console.log(request.data.myProperty + i++);
-            break;
     }
     return true;
 });
@@ -52,6 +47,7 @@ chrome.extension.onMessage.addListener(function (request, sender, sendResponse) 
 
 //  Long-Lived Connections
 
+/*
 chrome.runtime.onConnect.addListener(function (port) {
 
     if (port.name == "my-channel") {
@@ -65,5 +61,6 @@ chrome.runtime.onConnect.addListener(function (port) {
         }, 2e3)
     }
 });
+*/
 
 
