@@ -10,9 +10,6 @@ chrome.tabs.onUpdated.addListener(function (tabId) {
     chrome.pageAction.show(tabId);
 });
 
-var i = 0;
-var temp_arr = [];
-
 
 
 function sendMessage(event, data) {
@@ -24,20 +21,32 @@ function sendMessage(event, data) {
     });
 }
 
+function getBuildList(){
+    return JSON.parse(localStorage.getItem('build_list')) || [];
+}
+function setBuildList(arr){
+    var arrToStr = JSON.stringify(arr);
+    localStorage.setItem('build_list', arrToStr);
+}
+
+
+var i = 0;
+var temp_arr = getBuildList();
+
+console.log(temp_arr);
+
 // One-Time Requests (listening for event names 'dom-loaded')
 chrome.extension.onMessage.addListener(function (request, sender, sendResponse) {
 
     switch (request.type) {
         case "tb-add-to-queue":
-            // TODO: add implimentation of saving recived data to localStorage
-            temp_arr.push(request.data);
-            console.log(temp_arr)
+            setBuildList(request.data);
             break;
         case "tb-remove-from-queue":
-            console.log('remove element, array:', request.data)
-            temp_arr = request.data;
+            setBuildList(request.data);
+            break;
         case "tb-get-queue-list":
-            sendMessage("tb-send-queue-list", temp_arr);
+            sendMessage("tb-send-queue-list", getBuildList());
             break;
 
     }

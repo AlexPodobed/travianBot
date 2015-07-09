@@ -2,15 +2,7 @@
 
 console.info('content script loaded');
 
-function matchUrl(pathname, search, callback){
-    var expression1 = (pathname) ? (location.pathname.indexOf(pathname) >= 0) : true ;
-    var expression2 = (search) ? (location.search.indexOf(search) >= 0) : true ;
-
-    if(expression1 && expression2){
-        callback.apply(null, arguments)
-    }
-}
-
+var matchUrl = Utils.matchUrl;
 
 matchUrl('build.php', '', Build.renderAddtoQueueBtn);
 matchUrl('', '', function(){

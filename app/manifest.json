@@ -38,6 +38,7 @@
             "css": ["styles/main.css"],
             "js": [
                 "bower_components/jquery/dist/jquery.min.js",
+                "scripts/utils.js",
                 "scripts/modules/autoBuilder.js",
                 "scripts/contentscript.js"
             ],
