@@ -74,6 +74,28 @@ var Utils = (function(){
 
         return h * 60 * 60 * 1000 + m * 60 * 1000 + s * 1000;
     }
+    function removeElementFromList(arr, id){
+      for (var i = 0; i < arr.length; i++) {
+        var el;
+        if (arr[i].id == id) {
+          el = arr[i];
+          arr.splice(i, 1);
+          break;
+        }
+      }
+      return el;
+    }
+    function addUrlToImg(res, url){
+      var mapObj = {
+        "hero_image":  url + "hero_image",
+        "img/x.gif": url + "img/x.gif"
+      };
+      var result = res.replace(/hero_image|img\/x\.gif/gi, function(matched){
+        return mapObj[matched];
+      });
+
+      return result;
+    }
 
 
     return {
@@ -82,6 +104,8 @@ var Utils = (function(){
         onMessage: onMessage,
         getIdformUrl: getIdformUrl,
         Iterator: Iterator,
-        parseStringToDate: parseStringToDate
+        parseStringToDate: parseStringToDate,
+        removeElementFromList:removeElementFromList,
+        addUrlToImg:addUrlToImg
     }
 })();
