@@ -87,6 +87,12 @@ var Build = (function () {
             buildQueue = request.data;
             generateBuildingsList();
         });
+
+        onMessage('tb-remove-from-list', function (request) {
+          console.log('remove ivent', request);
+          Utils.removeElementFromList(buildQueue,request.data.id);
+          generateBuildingsList();
+        });
     }
 
     function startAutoBuilding(){

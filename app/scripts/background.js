@@ -94,11 +94,13 @@ var autoBuilder = (function(){
             var buildIrl = $btn.attr('onclick').split("'")[1];
 
             build(buildIrl).success(function () {
-              console.log(currentObj.name, timeToWait, new Date());
+              console.log(currentObj.name,currentObj.id, timeToWait, new Date());
               // TODO: remove from localStorage and on View
 
-
-
+              buildList.shift();
+              iterator.index -= 1;
+              setBuildList(buildList);
+              sendMessage("tb-remove-from-list", currentObj.id);
 
               //removeFromQueue(currentObj.id);
               setTimeout(initRecurcive, timeToWait+2000);
