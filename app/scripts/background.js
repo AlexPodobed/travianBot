@@ -10,9 +10,8 @@ chrome.tabs.onUpdated.addListener(function (tabId) {
 });
 
 
-
 function sendMessage(event, data) {
-    chrome.tabs.query({currentWindow: true}, function (tabs) {
+    chrome.tabs.query({active:true,currentWindow: true}, function (tabs) {
       if(tabs[0] && tabs[0].id){
         chrome.tabs.sendMessage(tabs[0].id, {
           type: event,
@@ -36,6 +35,7 @@ function setBuildList(arr){
 // TODO: now is hardcoded, need to get it from content script
 var rootUrl = "http://tx3.travian.co.uk/";
 var buildList = getBuildList();
+var isAutoBuildingLoop = false;
 
 console.log(buildList);
 
@@ -51,10 +51,25 @@ chrome.extension.onMessage.addListener(function (request, sender, sendResponse) 
             setBuildList(buildList);
             break;
         case "tb-get-queue-list":
-            sendMessage("tb-send-queue-list", buildList);
+            sendMessage("tb-send-queue-list", {
+                buildList: buildList,
+                isLoopActive: isAutoBuildingLoop
+            });
             break;
-        case "tb-start-auto-building":
-            autoBuilder.init();
+        case "tb-trigger-auto-building":
+            isAutoBuildingLoop = request.data.isLoopActive;
+            console.log(isAutoBuildingLoop)
+            if(isAutoBuildingLoop){
+                sendMessage('tb-auto-build-event', {
+                    type: "info",
+                    title: "auto-building",
+                    message: "Started"
+                });
+                autoBuilder.startRecursive();
+            } else {
+                autoBuilder.stopRecurcive();
+            }
+
             break;
     }
     return true;
@@ -64,24 +79,35 @@ chrome.extension.onMessage.addListener(function (request, sender, sendResponse) 
 var autoBuilder = (function(){
   var parseStringToDate = Utils.parseStringToDate;
   var iterator = Utils.Iterator(buildList);
+  var timerId;
 
-  function getBuildingDetails(id){
-    console.log(rootUrl+'build.php?id='+ id);
-    return jQuery.get(rootUrl+'build.php?id='+ id);
+  function getBuildingDetails(build){
+    console.log(rootUrl+'build.php?id='+ build.id);
+    return jQuery.get(rootUrl+'build.php?newdid='+build.villageId+'&id='+ build.id);
   }
 
   function build(url){
     return jQuery.get(rootUrl + url);
   }
 
-  function initRecurcive() {
+  function stopRecurcive(){
+      isAutoBuildingLoop = false;
+      iterator.reset();
+      clearTimeout(timerId);
+      sendMessage("tb-send-queue-list", {
+          buildList: buildList,
+          isLoopActive: isAutoBuildingLoop
+      });
+  }
 
-    if (iterator.hasNext()) {
+  function startRecursive() {
+
+    if (iterator.hasNext() && isAutoBuildingLoop) {
       var currentObj = iterator.next();
 
       console.log("Iterator Index:",iterator.index, iterator)
 
-      getBuildingDetails(currentObj.id)
+      getBuildingDetails(currentObj)
         .success(function(res){
 
           console.log('1st AJAX: success');
@@ -94,31 +120,57 @@ var autoBuilder = (function(){
             var buildIrl = $btn.attr('onclick').split("'")[1];
 
             build(buildIrl).success(function () {
-              console.log(currentObj.name,currentObj.id, timeToWait, new Date());
-              // TODO: remove from localStorage and on View
+              console.log(currentObj.name,currentObj.id, timeToWait, new Date().toGMTString());
 
               buildList.shift();
               iterator.index -= 1;
-              setBuildList(buildList);
+              setBuildList(buildList);sendMessage('tb-auto-build-event', {
+                    type: "success",
+                    title: currentObj.villageName,
+                    message: currentObj.name + " successfully started building"
+                });
               sendMessage("tb-remove-from-list", currentObj.id);
+              console.log(new Array(80).join("-"));
 
-              //removeFromQueue(currentObj.id);
-              setTimeout(initRecurcive, timeToWait+2000);
+              timerId = setTimeout(startRecursive, timeToWait+2000);
             });
 
           }else{
-            console.log('smtng went wrong',$btn);
+            // this case is works when we don't have enough resources for building
+            // or previous building is not finished.
+              sendMessage('tb-auto-build-event', {
+                  type: "error",
+                  title: currentObj.villageName,
+                  message: currentObj.name + " smtng was wrong"
+              });
+            stopRecurcive();
             // TODO: think about make some delay and continue from this point
           }
         });
     } else {
-      console.log("finish");
+        sendMessage('tb-auto-build-event', {
+            type: "info",
+            title: "auto-build",
+            message: "FINISHED"
+        });
+      stopRecurcive();
+      console.log("finish", iterator.hasNext(), isAutoBuildingLoop);
       return;
     }
   }
 
+  function init(){
+      isAutoBuildingLoop = true;
+      startRecursive();
+  }
+
   return {
-    init: initRecurcive
+    init: init,
+    stopRecurcive: stopRecurcive,
+    startRecursive: startRecursive,
+    getIterator: function(){
+        return iterator;
+    }
   }
 })();
 

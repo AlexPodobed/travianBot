@@ -36,10 +36,15 @@
                 "https://tx3.travian.co.uk/*",
                 "https://translate.yandex.ua/"
             ],
-            "css": ["styles/main.css"],
+            "css": [
+                "bower_components/toastr/toastr.min.css",
+                "styles/main.css"
+            ],
             "js": [
                 "bower_components/jquery/dist/jquery.min.js",
+                "bower_components/toastr/toastr.min.js",
                 "scripts/utils.js",
+                "scripts/toasterSettings.js",
                 "scripts/modules/autoBuilder.js",
                 "scripts/contentscript.js"
             ],

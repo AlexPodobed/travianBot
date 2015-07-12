@@ -1,9 +1,10 @@
 console.info("auto-builder module loaded");
 
 var Build = (function () {
-    var buildQueue;
-    var $div;
-    var activeVillageID;
+    var buildQueue,
+        activeVillageID,
+        activeVillageName,
+        $div, isLoopActive;
 
 
     var sendMessage = Utils.sendMessage;
@@ -24,17 +25,21 @@ var Build = (function () {
     function generateBuildingsList() {
         var $span = jQuery("<span>"),
             $ul = jQuery("<ul>"),
-            $li = jQuery("<li>");
+            $li = jQuery("<li>"),
+            $activeVillage = jQuery("#sidebarBoxVillagelist .sidebarBoxInnerBox .content a.active");
 
         if ($div) $div.remove();
         $div = jQuery("<div>");
-        activeVillageID = getIdformUrl(jQuery("#sidebarBoxVillagelist .sidebarBoxInnerBox .content a.active").attr('href'), 'newdid');
+
+
+        activeVillageID = getIdformUrl($activeVillage.attr('href'), 'newdid');
+        activeVillageName = $activeVillage.find('.name').text();
 
         if (buildQueue.length) {
             buildQueue.filter(function (el) {
                 return el.villageId == activeVillageID
-            }).map(function (buildObj) {
-                var li = $li.clone().text(buildObj.name);
+            }).map(function (buildObj, index) {
+                var li = $li.clone().text(index+1 + "." +buildObj.name);
                 var span = $span.clone().text('x');
                 span.on('click', function () {
                     removeFromQueue(buildObj.id)
@@ -42,8 +47,8 @@ var Build = (function () {
                 $ul.append(li.append(span));
             });
 
-            var btn = createBtn('start');
-            btn.on('click', startAutoBuilding.bind(btn));
+            var btn = createBtn(isLoopActive ? 'stop' :'start');
+            btn.on('click', triggerAutoBuilding.bind(btn));
 
             $div.addClass("tb-buildings-list");
             $div.addClass("sidebarBox").append($ul, btn);
@@ -66,7 +71,8 @@ var Build = (function () {
         var buildObj = {
             id: id,
             name: name,
-            villageId: activeVillageID
+            villageId: activeVillageID,
+            villageName: activeVillageName
         };
 
         buildQueue.push(buildObj);
@@ -80,23 +86,63 @@ var Build = (function () {
 
         jQuery("#contract .contractLink").append(btn);
     }
+    function renderAddToQueBtnForNewBuilding(){
 
-    function init() {
-        getQueueList();
-        onMessage('tb-send-queue-list', function (request) {
-            buildQueue = request.data;
-            generateBuildingsList();
+    }
+    function addToQueueNewBuilding(){
+        // TODO: check if add btn green, add url to buildObj and send to BG script
+        //
+    }
+    function highlightFields(){
+        Utils.matchUrl("dorf1", '' , function(){
+            var getResourceFuildhash = Utils.getResourceFuildhash();
+
+            buildQueue.map(function(build, index){
+                var appropriateFieldId = getResourceFuildhash[build.id];
+                var orderNumber = jQuery('<span class="tb-order-number">').text(index+1);
+                jQuery("#village_map > div").eq(appropriateFieldId)
+                    .addClass("tb-in-queue")
+                    .append(orderNumber);
+            });
         });
+        Utils.matchUrl("dorf2", '' , function(){
+            buildQueue.map(function(build, index){
+                var buildField = jQuery("#levels .colorLayer").filter('.aid'+build.id);
 
-        onMessage('tb-remove-from-list', function (request) {
-          console.log('remove ivent', request);
-          Utils.removeElementFromList(buildQueue,request.data.id);
-          generateBuildingsList();
+                if(buildField.size()){
+                    var orderNumber = jQuery('<span class="tb-order-number">').text(index+1);
+                    buildField.addClass("tb-in-queue").append(orderNumber)
+                }
+
+            });
         });
     }
 
-    function startAutoBuilding(){
-        sendMessage("tb-start-auto-building", {});
+    function init() {
+
+        getQueueList();
+        onMessage('tb-send-queue-list', function (request) {
+            buildQueue   = request.data.buildList;
+            isLoopActive = request.data.isLoopActive;
+            generateBuildingsList();
+            highlightFields();
+        });
+
+        onMessage('tb-remove-from-list', function (request) {
+          Utils.removeElementFromList(buildQueue,request.data.id);
+          generateBuildingsList();
+        });
+
+        onMessage('tb-auto-build-event', function(request){
+            toastr[request.data.type](request.data.message, request.data.title);
+        })
+    }
+
+    function triggerAutoBuilding(){
+        isLoopActive = !isLoopActive;
+        jQuery(this).text(isLoopActive ? 'stop' :'start');
+
+        sendMessage("tb-trigger-auto-building", {isLoopActive: isLoopActive});
     }
 
     return {
@@ -106,50 +152,3 @@ var Build = (function () {
     }
 }());
 
-
-
-
-function PoC() {
-
-  var arr = [
-    {
-      "time": "0:00:02",
-      "name": "id_21"
-    },
-    {
-      "time": "0:00:03",
-      "name": "id_22"
-    },
-    {
-      "time": "0:00:5",
-      "name": "id_23"
-    }
-  ];
-
-
-  var parseStringToDate = Utils.parseStringToDate;
-  var iterator = Utils.Iterator(arr);
-
-  function getData(str, callback) {
-    console.log(str, new Date());
-    callback.apply(this, arguments);
-  }
-
-
-  function initRecurcive() {
-    if (iterator.hasNext()) {
-      var currentObj = iterator.next();
-      var timeToWait = parseStringToDate(currentObj.time);
-
-      getData(currentObj.name, function () {
-        arr[iterator.index] = undefined;
-        console.log(arr)
-        setTimeout(initRecurcive, timeToWait);
-      });
-    } else {
-      console.log("finish");
-      return;
-    }
-  }
-  initRecurcive();
-}
