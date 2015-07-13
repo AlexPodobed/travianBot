@@ -8,36 +8,6 @@ var autoBuilderConstructor = function(buildList, rootUrl, buildingObj){
   function getBuildingDetails(build){
     return jQuery.get(rootUrl+'build.php?newdid='+build.villageId+'&id='+ build.id);
   }
-
-  function build(url){
-    return jQuery.get(rootUrl + url);
-  }
-
-  function stopRecursive(){
-    buildingObj.status = false;
-    iterator.reset();
-    clearTimeout(timerId);
-    sendMessage("tb-send-queue-list", {
-      buildList: buildList,
-      isLoopActive: buildingObj.status
-    });
-  }
-  function notifyUser(type, title, message){
-    sendMessage('tb-auto-build-event', {
-      type: type,
-      title: title,
-      message: message
-    });
-  }
-
-
-  function removeBuiltField(currentObj){
-    buildList.shift();
-    iterator.index -= 1;
-    setBuildList(buildList);
-    sendMessage("tb-remove-from-list", currentObj.id);
-  }
-
   function checkBuildingsDetails(res){
     var deferred = jQuery.Deferred();
 
@@ -59,7 +29,33 @@ var autoBuilderConstructor = function(buildList, rootUrl, buildingObj){
     }
     return deferred.promise();
   }
+  function build(url){
+    return jQuery.get(rootUrl + url);
+  }
+  function notifyUser(type, title, message){
+    sendMessage('tb-auto-build-event', {
+      type: type,
+      title: title,
+      message: message
+    });
+  }
+  function removeBuiltField(currentObj){
+    buildList.shift();
+    iterator.index -= 1;
+    setBuildList(buildList);
+    sendMessage("tb-remove-from-list", currentObj.id);
+  }
 
+
+  function stopRecursive(){
+    buildingObj.status = false;
+    iterator.reset();
+    clearTimeout(timerId);
+    sendMessage("tb-send-queue-list", {
+      buildList: buildList,
+      isLoopActive: buildingObj.status
+    });
+  }
   function startRecursive() {
     if (iterator.hasNext() && buildingObj.status) {
       var currentObj = iterator.next();
@@ -95,10 +91,14 @@ var autoBuilderConstructor = function(buildList, rootUrl, buildingObj){
       return;
     }
   }
-
+  function start(delay){
+    console.log(delay, timerId);
+    var time = Utils.parseStringToDate(delay);
+    timerId = setTimeout(startRecursive, time);
+  }
   return {
-    stopRecursive: stopRecursive,
-    startRecursive: startRecursive,
+    stop: stopRecursive,
+    start: start,
     notifyUser: notifyUser
   }
 };

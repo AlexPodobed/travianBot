@@ -44,10 +44,10 @@ chrome.extension.onMessage.addListener(function (request, sender, sendResponse) 
             autoBuilding.status = request.data.isLoopActive;
             if(autoBuilding.status){
                 autoBuilder.notifyUser("info", 'auto-building', 'started');
-                autoBuilder.startRecursive();
+                autoBuilder.start(request.data.timer);
             } else {
                 autoBuilder.notifyUser("info", 'auto-building', 'stopped');
-                autoBuilder.stopRecursive();
+                autoBuilder.stop();
             }
             break;
     }

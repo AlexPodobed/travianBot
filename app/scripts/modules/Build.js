@@ -138,11 +138,17 @@ var Build = (function () {
         })
     }
 
-    function triggerAutoBuilding(){
-        isLoopActive = !isLoopActive;
-        jQuery(this).text(isLoopActive ? 'stop' :'start');
 
-        sendMessage("tb-trigger-auto-building", {isLoopActive: isLoopActive});
+
+    function triggerAutoBuilding(){
+        if(location.pathname.indexOf('dorf') < 0){
+          toastr['warning']("You should go to /dorf2.php or /dorf1.php", "Change location!");
+        }else {
+          isLoopActive = !isLoopActive;
+          jQuery(this).text(isLoopActive ? 'stop' :'start');
+          var timeToWait = jQuery(".buildingList #timer1").text() || "00:00:00";
+          sendMessage("tb-trigger-auto-building", {isLoopActive: isLoopActive, timer: timeToWait});
+        }
     }
 
     return {
