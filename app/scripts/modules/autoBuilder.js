@@ -1,154 +1,104 @@
-console.info("auto-builder module loaded");
 
-var Build = (function () {
-    var buildQueue,
-        activeVillageID,
-        activeVillageName,
-        $div, isLoopActive;
+var autoBuilderConstructor = function(buildList, rootUrl, buildingObj){
+  // dependencies: @buildList, @rootUrl, @buildingObj
+  var parseStringToDate = Utils.parseStringToDate;
+  var iterator = Utils.Iterator(buildList);
+  var timerId;
+
+  function getBuildingDetails(build){
+    return jQuery.get(rootUrl+'build.php?newdid='+build.villageId+'&id='+ build.id);
+  }
+
+  function build(url){
+    return jQuery.get(rootUrl + url);
+  }
+
+  function stopRecursive(){
+    buildingObj.status = false;
+    iterator.reset();
+    clearTimeout(timerId);
+    sendMessage("tb-send-queue-list", {
+      buildList: buildList,
+      isLoopActive: buildingObj.status
+    });
+  }
+  function notifyUser(type, title, message){
+    sendMessage('tb-auto-build-event', {
+      type: type,
+      title: title,
+      message: message
+    });
+  }
 
 
-    var sendMessage = Utils.sendMessage;
-    var onMessage = Utils.onMessage;
-    var getIdformUrl = Utils.getIdformUrl;
+  function removeBuiltField(currentObj){
+    buildList.shift();
+    iterator.index -= 1;
+    setBuildList(buildList);
+    sendMessage("tb-remove-from-list", currentObj.id);
+  }
 
+  function checkBuildingsDetails(res){
+    var deferred = jQuery.Deferred();
 
-    function getQueueList() {
-        sendMessage("tb-get-queue-list", {})
+    console.log('1st AJAX request: success, checkBuildingsDetails applying');  // remove it
+    var fixedResponse = Utils.addUrlToImg(res,rootUrl);
+    var $res = jQuery(fixedResponse);
+    var $btn = $res.find("#contract button:first");
+
+    if($btn.hasClass("green build")){
+      var timeToWait = parseStringToDate($res.find("#contract .clocks").text());
+      var buildIrl = $btn.attr('onclick').split("'")[1];
+
+      deferred.resolve({timer: timeToWait, url: buildIrl});
+    } else {
+      //TODO: check why button is not green
+      deferred.reject({
+        message: "something went wrong"
+      });
     }
+    return deferred.promise();
+  }
 
-    function createBtn(text) {
-        var btn = jQuery('<button>');
-        btn.text(text);
-        btn.addClass('tb-btn');
-        return btn;
-    }
-    function generateBuildingsList() {
-        var $span = jQuery("<span>"),
-            $ul = jQuery("<ul>"),
-            $li = jQuery("<li>"),
-            $activeVillage = jQuery("#sidebarBoxVillagelist .sidebarBoxInnerBox .content a.active");
+  function startRecursive() {
+    if (iterator.hasNext() && buildingObj.status) {
+      var currentObj = iterator.next();
 
-        if ($div) $div.remove();
-        $div = jQuery("<div>");
+      console.log("Iterator Index:", iterator.index, iterator)
 
+      getBuildingDetails(currentObj)
+        .success(function (res) {
 
-        activeVillageID = getIdformUrl($activeVillage.attr('href'), 'newdid');
-        activeVillageName = $activeVillage.find('.name').text();
-
-        if (buildQueue.length) {
-            buildQueue.filter(function (el) {
-                return el.villageId == activeVillageID
-            }).map(function (buildObj, index) {
-                var li = $li.clone().text(index+1 + "." +buildObj.name);
-                var span = $span.clone().text('x');
-                span.on('click', function () {
-                    removeFromQueue(buildObj.id)
+          checkBuildingsDetails(res)
+            .done(function (response) {
+              build(response.url)
+                .success(function () {
+                  console.log('built'); // remove it
+                  removeBuiltField(currentObj);
+                  notifyUser('success', currentObj.villageName, currentObj.name + " successfully started building");
+                  timerId = setTimeout(startRecursive, response.timer + 2000);
+                  console.log(new Array(80).join("-"));  // remove it
                 });
-                $ul.append(li.append(span));
-            });
-
-            var btn = createBtn(isLoopActive ? 'stop' :'start');
-            btn.on('click', triggerAutoBuilding.bind(btn));
-
-            $div.addClass("tb-buildings-list");
-            $div.addClass("sidebarBox").append($ul, btn);
-
-            $div.insertAfter('#sidebarBoxQuestachievements');
-        }
-
-    }
-    function removeFromQueue(id) {
-        var buildToRemove = Utils.removeElementFromList(buildQueue,id);
-
-        if(buildToRemove){
-          sendMessage("tb-remove-from-queue", buildToRemove);
-          generateBuildingsList();
-        }
-    }
-    function addToQueue() {
-        var id = getIdformUrl(location.search, "id");
-        var name = jQuery.trim(jQuery(".titleInHeader").contents()[0].wholeText) + " (" + jQuery.trim(jQuery(".titleInHeader span").text()) + "+1)";
-        var buildObj = {
-            id: id,
-            name: name,
-            villageId: activeVillageID,
-            villageName: activeVillageName
-        };
-
-        buildQueue.push(buildObj);
-        sendMessage("tb-add-to-queue", buildObj);
-
-        generateBuildingsList();
-    }
-    function renderAddtoQueueBtn() {
-        var btn = createBtn("add to smart queue");
-        btn.on('click', addToQueue);
-
-        jQuery("#contract .contractLink").append(btn);
-    }
-    function renderAddToQueBtnForNewBuilding(){
-
-    }
-    function addToQueueNewBuilding(){
-        // TODO: check if add btn green, add url to buildObj and send to BG script
-        //
-    }
-    function highlightFields(){
-        Utils.matchUrl("dorf1", '' , function(){
-            var getResourceFuildhash = Utils.getResourceFuildhash();
-
-            buildQueue.map(function(build, index){
-                var appropriateFieldId = getResourceFuildhash[build.id];
-                var orderNumber = jQuery('<span class="tb-order-number">').text(index+1);
-                jQuery("#village_map > div").eq(appropriateFieldId)
-                    .addClass("tb-in-queue")
-                    .append(orderNumber);
+            })
+            .fail(function (error) {
+              console.log('error with building field');   // remove it
+              notifyUser('error', currentObj.villageName, currentObj.name + " smtng was wrong");
+              stopRecursive();
+              // TODO: think about make some delay and continue from this point
             });
         });
-        Utils.matchUrl("dorf2", '' , function(){
-            buildQueue.map(function(build, index){
-                var buildField = jQuery("#levels .colorLayer").filter('.aid'+build.id);
 
-                if(buildField.size()){
-                    var orderNumber = jQuery('<span class="tb-order-number">').text(index+1);
-                    buildField.addClass("tb-in-queue").append(orderNumber)
-                }
-
-            });
-        });
+    } else {
+      notifyUser('info', 'auto-build', "FINISHED");
+      stopRecursive();
+      console.log("finish", iterator.hasNext(), buildingObj.status);  // remove it
+      return;
     }
+  }
 
-    function init() {
-
-        getQueueList();
-        onMessage('tb-send-queue-list', function (request) {
-            buildQueue   = request.data.buildList;
-            isLoopActive = request.data.isLoopActive;
-            generateBuildingsList();
-            highlightFields();
-        });
-
-        onMessage('tb-remove-from-list', function (request) {
-          Utils.removeElementFromList(buildQueue,request.data.id);
-          generateBuildingsList();
-        });
-
-        onMessage('tb-auto-build-event', function(request){
-            toastr[request.data.type](request.data.message, request.data.title);
-        })
-    }
-
-    function triggerAutoBuilding(){
-        isLoopActive = !isLoopActive;
-        jQuery(this).text(isLoopActive ? 'stop' :'start');
-
-        sendMessage("tb-trigger-auto-building", {isLoopActive: isLoopActive});
-    }
-
-    return {
-        renderAddtoQueueBtn: renderAddtoQueueBtn,
-        generateList: generateBuildingsList,
-        init: init
-    }
-}());
-
+  return {
+    stopRecursive: stopRecursive,
+    startRecursive: startRecursive,
+    notifyUser: notifyUser
+  }
+};
