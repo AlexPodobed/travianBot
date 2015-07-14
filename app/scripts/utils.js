@@ -112,11 +112,11 @@ var Utils = (function(){
       });
     }
     function getBuildList(){
-      return JSON.parse(localStorage.getItem('build_list')) || [];
+      return JSON.parse(localStorage.getItem('tb-village-hash')) || {};
     }
-    function setBuildList(arr){
-      var arrToStr = JSON.stringify(arr);
-      localStorage.setItem('build_list', arrToStr);
+    function setBuildList(obj){
+      var objToStr = JSON.stringify(obj);
+      localStorage.setItem('tb-village-hash', objToStr);
     }
 
     return {
