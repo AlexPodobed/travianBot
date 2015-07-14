@@ -1,8 +1,10 @@
 
-var autoBuilderConstructor = function(buildingObj, rootUrl, villageId){
+var autoBuilderConstructor = function(buildHash, rootUrl, villageId){
   // dependencies: @buildingObj, @rootUrl
-  console.log(buildingObj)
-  var buildList = buildingObj.buildQueue;
+  console.log(buildHash[villageId])
+  var buildList = buildHash[villageId].buildQueue;
+  var buildingObj = buildHash[villageId];
+  var villageName = buildHash[villageId].name;
   var parseStringToDate = Utils.parseStringToDate;
   var iterator = Utils.Iterator(buildList);
   var timerId;
@@ -44,10 +46,12 @@ var autoBuilderConstructor = function(buildingObj, rootUrl, villageId){
     });
   }
   function removeBuiltField(currentObj){
-    buildList.shift();
+//    buildList.shift();
     iterator.index -= 1;
-    setBuildList(buildList);
-    sendMessage("tb-remove-from-list", currentObj.id);
+//    setBuildList(buildList);
+      Utils.removeElementFromList(buildList,currentObj.id);
+      setBuildList(buildHash);
+      sendMessage("tb-remove-from-list", currentObj.id);
   }
 
   function stopRecursive(){
@@ -58,6 +62,7 @@ var autoBuilderConstructor = function(buildingObj, rootUrl, villageId){
       buildList: buildList,
       isLoopActive: buildingObj.isLoop
     });
+    setBuildList(buildHash);
   }
   function startRecursive() {
     if (iterator.hasNext() && buildingObj.isLoop) {
@@ -74,14 +79,14 @@ var autoBuilderConstructor = function(buildingObj, rootUrl, villageId){
                 .success(function () {
                   console.log('built'); // remove it
                   removeBuiltField(currentObj);
-                  notifyUser('success', currentObj.villageName, currentObj.name + " successfully started building");
+                  notifyUser('success', villageName, currentObj.name + " successfully started building");
                   timerId = setTimeout(startRecursive, response.timer + 2000);
                   console.log(new Array(80).join("-"));  // remove it
                 });
             })
             .fail(function (error) {
               console.log('error with building field', error);   // remove it
-              notifyUser('error', currentObj.villageName, currentObj.name + " smtng was wrong");
+              notifyUser('error', villageName, currentObj.name + " smtng was wrong");
               stopRecursive();
               // TODO: think about make some delay and continue from this point
             });
@@ -90,7 +95,7 @@ var autoBuilderConstructor = function(buildingObj, rootUrl, villageId){
     } else {
       notifyUser('info', 'auto-build', "FINISHED");
       stopRecursive();
-      console.log("finish", iterator.hasNext(), buildingObj.isLoop);  // remove it
+      console.log("finish", villageName ,iterator.hasNext());  // remove it
       return;
     }
   }

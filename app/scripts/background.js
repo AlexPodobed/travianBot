@@ -79,7 +79,7 @@ chrome.extension.onMessage.addListener(function (request, sender, sendResponse) 
             if(!currentBuildControls){
               console.log('autoBuildCtrl: created new')
               currentBuildControls = {
-                instance: autoBuilderConstructor(buildHash[currentVillageId], rootUrl, currentVillageId)
+                instance: autoBuilderConstructor(buildHash, rootUrl, currentVillageId)
               };
               autoBuildCtrl[currentVillageId] = currentBuildControls;
             }
