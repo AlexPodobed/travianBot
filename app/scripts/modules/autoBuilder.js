@@ -1,7 +1,7 @@
 
 var autoBuilderConstructor = function(buildHash, rootUrl, villageId){
   // dependencies: @buildingObj, @rootUrl
-  console.log(buildHash[villageId])
+  console.log(buildHash[villageId]);
   var buildList = buildHash[villageId].buildQueue;
   var buildingObj = buildHash[villageId];
   var villageName = buildHash[villageId].name;
@@ -28,10 +28,18 @@ var autoBuilderConstructor = function(buildHash, rootUrl, villageId){
       deferred.resolve({timer: timeToWait, url: buildIrl});
     } else {
       //TODO: check why button is not green
-      deferred.reject({
-        message: "something went wrong",
-        res: $res
-      });
+      var errorObj = {
+        message: " something went wrong",
+      };
+      if($btn.val() === "Exchange resources"){
+        errorObj.message = " not enough resources";
+      }else if($btn.val() === "Construct with master builder"){
+        errorObj.message = " not finished upgrading";
+      } else if($res.find("#contract >span.none").size()){
+        errorObj.message = " has been fully upgraded";
+      }
+
+      deferred.reject(errorObj);
     }
     return deferred.promise();
   }
@@ -47,8 +55,8 @@ var autoBuilderConstructor = function(buildHash, rootUrl, villageId){
   }
   function removeBuiltField(currentObj){
 //    buildList.shift();
-    iterator.index -= 1;
 //    setBuildList(buildList);
+      iterator.index -= 1;
       Utils.removeElementFromList(buildList,currentObj.id);
       setBuildList(buildHash);
       sendMessage("tb-remove-from-list", currentObj.id);
@@ -64,6 +72,11 @@ var autoBuilderConstructor = function(buildHash, rootUrl, villageId){
     });
     setBuildList(buildHash);
   }
+  function errorHandler(){
+    stopRecursive();
+    notifyUser('error', villageName, " ajax error");
+  }
+
   function startRecursive() {
     if (iterator.hasNext() && buildingObj.isLoop) {
       var currentObj = iterator.next();
@@ -82,15 +95,17 @@ var autoBuilderConstructor = function(buildHash, rootUrl, villageId){
                   notifyUser('success', villageName, currentObj.name + " successfully started building");
                   timerId = setTimeout(startRecursive, response.timer + 2000);
                   console.log(new Array(80).join("-"));  // remove it
-                });
+                })
+                .error(errorHandler)
             })
             .fail(function (error) {
               console.log('error with building field', error);   // remove it
-              notifyUser('error', villageName, currentObj.name + " smtng was wrong");
+              notifyUser('error', villageName, currentObj.name + error.message);
               stopRecursive();
               // TODO: think about make some delay and continue from this point
             });
-        });
+        })
+        .error(errorHandler);
 
     } else {
       notifyUser('info', 'auto-build', "FINISHED");
