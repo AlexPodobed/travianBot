@@ -4,24 +4,31 @@ var Build = (function () {
     var buildQueue,
         activeVillageID,
         activeVillageName,
-        $div, isLoopActive;
+        $div, isLoopActive,
+        template;
 
 
     var sendMessage = Utils.sendMessage;
     var onMessage = Utils.onMessage;
     var getIdformUrl = Utils.getIdformUrl;
 
+    function generateSidebarBox(){
+      Utils.getTemplate("sidebarBox")
+        .success(function (res) {
+          template = Handlebars.compile(res);
+          var html = template({test: "asdasds"});
 
+          jQuery('#sidebarBoxQuestachievements').after(html)
+        })
+    }
     function getActiveVillageDetails(){
       var $activeVillage = jQuery("#sidebarBoxVillagelist .sidebarBoxInnerBox .content a.active");
       activeVillageID = getIdformUrl($activeVillage.attr('href'), 'newdid');
       activeVillageName = $activeVillage.find('.name').text();
     }
-
     function getQueueList() {
         sendMessage("tb-get-queue-list", {villageId: activeVillageID});
     }
-
     function createBtn(text) {
         var btn = jQuery('<button>');
         btn.text(text);
@@ -136,6 +143,8 @@ var Build = (function () {
     }
 
     function init() {
+        generateSidebarBox();
+
         getActiveVillageDetails();
         getQueueList();
         onMessage('tb-send-queue-list', function (request) {

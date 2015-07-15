@@ -57,3 +57,7 @@
     background-color: #fff;
     font-size: 10px;
 }
+
+#tb-build-list .boxTitle{
+  padding-top: 15px;
+}
