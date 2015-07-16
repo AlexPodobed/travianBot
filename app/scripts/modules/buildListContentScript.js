@@ -1,5 +1,15 @@
 console.info("auto-builder module for content script loaded");
 
+Handlebars.registerHelper('list', function(items, options) {
+    var out = "<ul>";
+
+    for(var i=0, l=items.length; i<l; i++) {
+        out = out + "<li>" + (i+1) + ". " + options.fn(items[i]) + "</li>";
+    }
+
+    return out + "</ul>";
+});
+
 var Build = (function () {
     var buildQueue,
         activeVillageID,
@@ -16,7 +26,21 @@ var Build = (function () {
       Utils.getTemplate("sidebarBox")
         .success(function (res) {
           template = Handlebars.compile(res);
-          var html = template({test: "asdasds"});
+          var buildings = [
+              {
+                  id: 1,
+                  name: "test1"
+              },
+              {
+                  id: 2,
+                  name: "test2"
+              },
+              {
+                  id: 4,
+                  name: "test3"
+              }
+          ];
+          var html = template({buildings: buildings});
 
           jQuery('#sidebarBoxQuestachievements').after(html)
         })
@@ -62,7 +86,20 @@ var Build = (function () {
             $div.addClass("sidebarBox").append($ul, btn);
 
             $div.insertAfter('#sidebarBoxQuestachievements');
+
+/*
+            Utils.getTemplate("sidebarBox")
+                .success(function (temp) {
+                    template = Handlebars.compile(temp);
+
+                    var html = template({buildings: buildings});
+
+                    jQuery('#sidebarBoxQuestachievements').after(html)
+                })*/
         }
+
+
+
 
     }
     function removeFromQueue(id) {

@@ -1,6 +1,5 @@
 
 var autoBuilderConstructor = function(buildHash, rootUrl, villageId){
-  // dependencies: @buildingObj, @rootUrl
   console.log(buildHash[villageId]);
   var buildList = buildHash[villageId].buildQueue;
   var buildingObj = buildHash[villageId];
