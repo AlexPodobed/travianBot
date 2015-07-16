@@ -2,49 +2,28 @@ console.info("auto-builder module for content script loaded");
 
 Handlebars.registerHelper('list', function(items, options) {
     var out = "<ul>";
-
     for(var i=0, l=items.length; i<l; i++) {
-        out = out + "<li>" + (i+1) + ". " + options.fn(items[i]) + "</li>";
+        out = out + "<li><a>" + (i+1) + ". " + options.fn(items[i]) + "</a></li>";
     }
-
     return out + "</ul>";
 });
+
+Handlebars.registerHelper("inc", function (value, options) {
+  return parseInt(value) + 1;
+});
+
 
 var Build = (function () {
     var buildQueue,
         activeVillageID,
         activeVillageName,
-        $div, isLoopActive,
+        isLoopActive,
         template;
-
 
     var sendMessage = Utils.sendMessage;
     var onMessage = Utils.onMessage;
     var getIdformUrl = Utils.getIdformUrl;
 
-    function generateSidebarBox(){
-      Utils.getTemplate("sidebarBox")
-        .success(function (res) {
-          template = Handlebars.compile(res);
-          var buildings = [
-              {
-                  id: 1,
-                  name: "test1"
-              },
-              {
-                  id: 2,
-                  name: "test2"
-              },
-              {
-                  id: 4,
-                  name: "test3"
-              }
-          ];
-          var html = template({buildings: buildings});
-
-          jQuery('#sidebarBoxQuestachievements').after(html)
-        })
-    }
     function getActiveVillageDetails(){
       var $activeVillage = jQuery("#sidebarBoxVillagelist .sidebarBoxInnerBox .content a.active");
       activeVillageID = getIdformUrl($activeVillage.attr('href'), 'newdid');
@@ -59,48 +38,32 @@ var Build = (function () {
         btn.addClass('tb-btn');
         return btn;
     }
+    function getTemplate(){
+      var deferred = jQuery.Deferred();
+
+      if(template){
+        console.log('cached');
+        deferred.resolve({template: template});
+      }else{
+        Utils.getTemplate("sidebarBox")
+          .success(function (temp) {
+            template = Handlebars.compile(temp);
+            deferred.resolve({template: template});
+          })
+      }
+      return deferred;
+    }
     function generateBuildingsList() {
-        var $span = jQuery("<span>"),
-            $ul = jQuery("<ul>"),
-            $li = jQuery("<li>");
-
-        if ($div) $div.remove();
-        $div = jQuery("<div>");
-
-
+        console.log(template);
 
         if (buildQueue.length) {
-            buildQueue.map(function (buildObj, index) {
-                var li = $li.clone().text(index+1 + "." +buildObj.name);
-                var span = $span.clone().text('x');
-                span.on('click', function () {
-                    removeFromQueue(buildObj.id)
-                });
-                $ul.append(li.append(span));
-            });
-
-            var btn = createBtn(isLoopActive ? 'stop' :'start');
-            btn.on('click', triggerAutoBuilding.bind(btn));
-
-            $div.addClass("tb-buildings-list");
-            $div.addClass("sidebarBox").append($ul, btn);
-
-            $div.insertAfter('#sidebarBoxQuestachievements');
-
-/*
-            Utils.getTemplate("sidebarBox")
-                .success(function (temp) {
-                    template = Handlebars.compile(temp);
-
-                    var html = template({buildings: buildings});
-
-                    jQuery('#sidebarBoxQuestachievements').after(html)
-                })*/
+            getTemplate()
+              .done(function (data) {
+                var html = data.template({buildings: buildQueue, btnText: isLoopActive ? 'stop' :'start'});
+                jQuery('#tb-build-list').remove();
+                jQuery('#sidebarBoxQuestachievements').after(html)
+              })
         }
-
-
-
-
     }
     function removeFromQueue(id) {
         var buildToRemove = Utils.removeElementFromList(buildQueue,id);
@@ -178,28 +141,36 @@ var Build = (function () {
         });
       }
     }
+    function atachEvents(){
+      var $body = jQuery('body');
+
+      $body.on('click', '.tb-remove-build-item', function () {
+        removeFromQueue(jQuery(this).data("build-id"))
+      });
+      $body.on('click', '.tb-trigger-autobuild', triggerAutoBuilding.bind(this));
+    }
+    function addMessageListeners(){
+      onMessage('tb-send-queue-list', function (request) {
+        console.log("init: ",request)
+        buildQueue   = request.data.buildList;
+        isLoopActive = request.data.isLoopActive;
+        generateBuildingsList();
+        atachEvents();
+        highlightFields();
+      });
+      onMessage('tb-remove-from-list', function (request) {
+        Utils.removeElementFromList(buildQueue,request.data.id);
+        generateBuildingsList();
+      });
+      onMessage('tb-auto-build-event', function(request){
+        toastr[request.data.type](request.data.message, request.data.title);
+      });
+    }
 
     function init() {
-        generateSidebarBox();
-
         getActiveVillageDetails();
         getQueueList();
-        onMessage('tb-send-queue-list', function (request) {
-          console.log("init: ",request)
-            buildQueue   = request.data.buildList;
-            isLoopActive = request.data.isLoopActive;
-            generateBuildingsList();
-            highlightFields();
-        });
-
-        onMessage('tb-remove-from-list', function (request) {
-          Utils.removeElementFromList(buildQueue,request.data.id);
-          generateBuildingsList();
-        });
-
-        onMessage('tb-auto-build-event', function(request){
-            toastr[request.data.type](request.data.message, request.data.title);
-        })
+        addMessageListeners();
     }
 
     return {

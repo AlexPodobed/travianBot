@@ -11,8 +11,29 @@
       <div class="boxTitle">Build list:</div>
     </div>
     <div class="innerBox content">
-        {{#list buildings}}{{id}} {{name}}{{/list}}
-      <div class="linklistNotice">{{test}}</div>
+      <ul>
+        {{#each buildings}}
+            <li>
+              <a href="/build.php?id={{id}}"> {{inc @index}}. {{name}}</a>
+              <span class="tb-remove-build-item" data-build-id="{{id}}">x</span>
+            </li>
+        {{/each}}
+      </ul>
+
+      <div class="btn-wrapper">
+        <button type="submit" value="Click for details" class="green">
+          <div class="button-container addHoverClick ">
+            <div class="button-background">
+              <div class="buttonStart">
+                <div class="buttonEnd">
+                  <div class="buttonMiddle"></div>
+                </div>
+              </div>
+            </div>
+            <div class="button-content tb-trigger-autobuild">{{btnText}}</div>
+          </div>
+        </button>
+      </div>
     </div>
     <div class="innerBox footer">
     </div>
