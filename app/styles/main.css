@@ -91,9 +91,9 @@
   height: 10px;
 }
 
-#tb-build-list .button-container:hover .button-content {
+.tb-button-container:hover .button-content {
   color: #506030;
 }
-#tb-build-list .button-container:hover .button-background div {
-  background-image: url(http://gpack.travian.com/59/img/round/button/background/greenHover.png);
+.tb-button-container:hover .button-background div {
+  background-image: url(http://gpack.travian.com/59/img/round/button/background/greenHover.png) !important;
 }

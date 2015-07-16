@@ -47,9 +47,11 @@
         "bower_components/handlebars/handlebars.min.js",
         "bower_components/jquery/dist/jquery.min.js",
         "bower_components/toastr/toastr.min.js",
+        "scripts/settings/handlebarsHelper.js",
         "scripts/utils.js",
-        "scripts/toasterSettings.js",
+        "scripts/settings/toasterSettings.js",
         "scripts/modules/buildListContentScript.js",
+        "scripts/modules/plusAnalog.js",
         "scripts/contentscript.js"
       ],
       "html": [

@@ -1,16 +1,6 @@
 console.info("auto-builder module for content script loaded");
 
-Handlebars.registerHelper('list', function(items, options) {
-    var out = "<ul>";
-    for(var i=0, l=items.length; i<l; i++) {
-        out = out + "<li><a>" + (i+1) + ". " + options.fn(items[i]) + "</a></li>";
-    }
-    return out + "</ul>";
-});
 
-Handlebars.registerHelper("inc", function (value, options) {
-  return parseInt(value) + 1;
-});
 
 
 var Build = (function () {
@@ -23,6 +13,7 @@ var Build = (function () {
     var sendMessage = Utils.sendMessage;
     var onMessage = Utils.onMessage;
     var getIdformUrl = Utils.getIdformUrl;
+    template = {};
 
     function getActiveVillageDetails(){
       var $activeVillage = jQuery("#sidebarBoxVillagelist .sidebarBoxInnerBox .content a.active");
@@ -32,38 +23,33 @@ var Build = (function () {
     function getQueueList() {
         sendMessage("tb-get-queue-list", {villageId: activeVillageID});
     }
-    function createBtn(text) {
-        var btn = jQuery('<button>');
-        btn.text(text);
-        btn.addClass('tb-btn');
-        return btn;
-    }
-    function getTemplate(){
+    function getTemplate(name){
       var deferred = jQuery.Deferred();
 
-      if(template){
-        console.log('cached');
-        deferred.resolve({template: template});
+      if(template[name]){
+        deferred.resolve({template: template[name]});
       }else{
-        Utils.getTemplate("sidebarBox")
+        Utils.getTemplate(name)
           .success(function (temp) {
-            template = Handlebars.compile(temp);
-            deferred.resolve({template: template});
+            template[name] = Handlebars.compile(temp);
+            deferred.resolve({template: template[name]});
           })
       }
       return deferred;
     }
     function generateBuildingsList() {
-        console.log(template);
+        getTemplate("sidebarBox")
+          .done(function (data) {
+            var $sidebar = jQuery(data.template({buildings: buildQueue, btnText: isLoopActive ? 'stop' :'start'}));
 
-        if (buildQueue.length) {
-            getTemplate()
-              .done(function (data) {
-                var html = data.template({buildings: buildQueue, btnText: isLoopActive ? 'stop' :'start'});
-                jQuery('#tb-build-list').remove();
-                jQuery('#sidebarBoxQuestachievements').after(html)
-              })
-        }
+            $sidebar.find(".tb-trigger-autobuild").on('click', triggerAutoBuilding);
+            $sidebar.on('click', '.tb-remove-build-item', function () {
+              removeFromQueue(jQuery(this).data("build-id"))
+            });
+
+            jQuery('#tb-build-list').remove();
+            jQuery('#sidebarBoxQuestachievements').after($sidebar)
+          });
     }
     function removeFromQueue(id) {
         var buildToRemove = Utils.removeElementFromList(buildQueue,id);
@@ -90,10 +76,13 @@ var Build = (function () {
       generateBuildingsList();
     }
     function renderAddtoQueueBtn() {
-        var btn = createBtn("add to smart queue");
-        btn.on('click', addToQueue);
+      getTemplate("greenBtn")
+        .done(function (data) {
+          var $btn = $(data.template({btnText: "add to smart queue"}));
+          $btn.on('click', addToQueue);
 
-        jQuery("#contract .contractLink").append(btn);
+          jQuery("#contract .contractLink button:first").before($btn);
+        });
     }
     function renderAddToQueBtnForNewBuilding(){
 
@@ -127,13 +116,13 @@ var Build = (function () {
         });
     }
     function triggerAutoBuilding(){
+
       if(location.pathname.indexOf('dorf') < 0){
         toastr['warning']("You should go to /dorf2.php or /dorf1.php", "Change location!");
       }else {
         var timeToWait = jQuery(".buildingList #timer1").text() || "00:00:00";
         isLoopActive = !isLoopActive;
-        console.log(isLoopActive)
-        jQuery(this).text(isLoopActive ? 'stop' :'start');
+        generateBuildingsList();
         sendMessage("tb-trigger-auto-building", {
           villageId: activeVillageID,
           isLoopActive: isLoopActive,
@@ -141,21 +130,12 @@ var Build = (function () {
         });
       }
     }
-    function atachEvents(){
-      var $body = jQuery('body');
-
-      $body.on('click', '.tb-remove-build-item', function () {
-        removeFromQueue(jQuery(this).data("build-id"))
-      });
-      $body.on('click', '.tb-trigger-autobuild', triggerAutoBuilding.bind(this));
-    }
     function addMessageListeners(){
       onMessage('tb-send-queue-list', function (request) {
         console.log("init: ",request)
         buildQueue   = request.data.buildList;
         isLoopActive = request.data.isLoopActive;
         generateBuildingsList();
-        atachEvents();
         highlightFields();
       });
       onMessage('tb-remove-from-list', function (request) {

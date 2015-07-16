@@ -1,42 +1,43 @@
-<div id="tb-build-list" class="sidebarBox   ">
-  <div class="sidebarBoxBaseBox">
-    <div class="baseBox baseBoxTop">
-      <div class="baseBox baseBoxBottom">
-        <div class="baseBox baseBoxCenter"></div>
+{{#if buildings}}
+  <div id="tb-build-list" class="sidebarBox   ">
+    <div class="sidebarBoxBaseBox">
+      <div class="baseBox baseBoxTop">
+        <div class="baseBox baseBoxBottom">
+          <div class="baseBox baseBoxCenter"></div>
+        </div>
       </div>
     </div>
-  </div>
-  <div class="sidebarBoxInnerBox">
-    <div class="innerBox header ">
-      <div class="boxTitle">Build list:</div>
-    </div>
-    <div class="innerBox content">
-      <ul>
-        {{#each buildings}}
-            <li>
-              <a href="/build.php?id={{id}}"> {{inc @index}}. {{name}}</a>
-              <span class="tb-remove-build-item" data-build-id="{{id}}">x</span>
-            </li>
-        {{/each}}
-      </ul>
+    <div class="sidebarBoxInnerBox">
+      <div class="innerBox header ">
+        <div class="boxTitle">Build list:</div>
+      </div>
+      <div class="innerBox content">
+        <ul>
+          {{#each buildings}}
+          <li>
+            <a href="/build.php?id={{id}}"> {{inc @index}}. {{name}}</a>
+            <span class="tb-remove-build-item" data-build-id="{{id}}">x</span>
+          </li>
+          {{/each}}
+        </ul>
 
-      <div class="btn-wrapper">
-        <button type="submit" value="Click for details" class="green">
-          <div class="button-container addHoverClick ">
-            <div class="button-background">
-              <div class="buttonStart">
-                <div class="buttonEnd">
-                  <div class="buttonMiddle"></div>
+        <div class="btn-wrapper">
+          <button type="submit" value="Click for details" class="green">
+            <div class="tb-button-container button-container addHoverClick ">
+              <div class="button-background">
+                <div class="buttonStart">
+                  <div class="buttonEnd">
+                    <div class="buttonMiddle"></div>
+                  </div>
                 </div>
               </div>
+              <div class="button-content tb-trigger-autobuild">{{btnText}}</div>
             </div>
-            <div class="button-content tb-trigger-autobuild">{{btnText}}</div>
-          </div>
-        </button>
+          </button>
+        </div>
+      </div>
+      <div class="innerBox footer">
       </div>
     </div>
-    <div class="innerBox footer">
-    </div>
   </div>
-</div>
-
+{{/if}}
