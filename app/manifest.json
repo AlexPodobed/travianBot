@@ -1,6 +1,6 @@
 {
   "name": "__MSG_appName__",
-  "version": "0.0.7",
+  "version": "0.0.9",
   "manifest_version": 2,
   "description": "__MSG_appDescription__",
   "icons": {
@@ -35,8 +35,8 @@
   "content_scripts": [
     {
       "matches": [
-        "http://tx3.travian.co.uk/*",
-        "https://tx3.travian.co.uk/*",
+        "http://tx3.travian.com/*",
+        "https://tx3.travian.com/*",
         "https://translate.yandex.ua/"
       ],
       "css": [
@@ -46,6 +46,7 @@
       "js": [
         "bower_components/handlebars/handlebars.min.js",
         "bower_components/jquery/dist/jquery.min.js",
+        "bower_components/socket.io-client/socket.io.js",
         "bower_components/toastr/toastr.min.js",
         "scripts/settings/handlebarsHelper.js",
         "scripts/utils.js",

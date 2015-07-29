@@ -1,8 +1,5 @@
 console.info("auto-builder module for content script loaded");
 
-
-
-
 var Build = (function () {
     var buildQueue,
         activeVillageID,
@@ -22,6 +19,8 @@ var Build = (function () {
     }
     function getQueueList() {
         sendMessage("tb-get-queue-list", {villageId: activeVillageID});
+        socket.emit('get-queue-list', {villageId: activeVillageID});
+        socket.emit('get-info');
     }
     function getTemplate(name){
       var deferred = jQuery.Deferred();
@@ -56,6 +55,7 @@ var Build = (function () {
 
         if(buildToRemove){
           sendMessage("tb-remove-from-queue", {villageId: activeVillageID, buildId: buildToRemove.id});
+          socket.emit('remove-from-queue', {villageId: activeVillageID, buildId: buildToRemove.id})
           generateBuildingsList();
         }
     }
@@ -73,6 +73,7 @@ var Build = (function () {
       };
       buildQueue.push(obj.buildDetails);
       sendMessage("tb-add-to-queue", obj);
+      socket.emit('add-to-queue', obj);
       generateBuildingsList();
     }
     function renderAddtoQueueBtn() {
@@ -145,6 +146,17 @@ var Build = (function () {
       onMessage('tb-auto-build-event', function(request){
         toastr[request.data.type](request.data.message, request.data.title);
       });
+
+
+      socket.on('get-info', function(data){
+        console.log('get-info', data);
+      });
+
+      socket.on('get-queue-list', function(data){
+        console.log('get-queue-list', data);
+      });
+
+
     }
 
     function init() {

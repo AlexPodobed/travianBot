@@ -26,7 +26,6 @@ var autoBuilderConstructor = function(buildHash, rootUrl, villageId){
 
       deferred.resolve({timer: timeToWait, url: buildIrl});
     } else {
-      //TODO: check why button is not green
       var errorObj = {
         message: " something went wrong",
       };
@@ -53,8 +52,6 @@ var autoBuilderConstructor = function(buildHash, rootUrl, villageId){
     });
   }
   function removeBuiltField(currentObj){
-//    buildList.shift();
-//    setBuildList(buildList);
       iterator.index -= 1;
       Utils.removeElementFromList(buildList,currentObj.id);
       setBuildList(buildHash);
@@ -80,11 +77,10 @@ var autoBuilderConstructor = function(buildHash, rootUrl, villageId){
     if (iterator.hasNext() && buildingObj.isLoop) {
       var currentObj = iterator.next();
 
-      console.log("Iterator Index:", iterator.index, iterator)
+      console.log("Iterator Index:", iterator.index, iterator);
 
       getBuildingDetails(currentObj)
         .success(function (res) {
-
           checkBuildingsDetails(res)
             .done(function (response) {
               build(response.url)

@@ -16,7 +16,7 @@ var getBuildList = Utils.getBuildList;
 var setBuildList = Utils.setBuildList;
 
 // TODO: now is hardcoded, need to get it from content script
-var rootUrl = "http://tx3.travian.co.uk/";
+var rootUrl = "http://tx3.travian.com/";
 var buildHash = getBuildList();
 var autoBuildCtrl = {};
 
