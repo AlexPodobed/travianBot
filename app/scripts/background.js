@@ -14,45 +14,38 @@ chrome.tabs.onUpdated.addListener(function (tabId) {
 var sendMessage  = Utils.sendMessageFromBG;
 var getBuildList = Utils.getBuildList;
 var setBuildList = Utils.setBuildList;
+
 // TODO: now is hardcoded, need to get it from content script
 var rootUrl = "http://tx3.travian.co.uk/";
-var buildList = getBuildList();
-var autoBuilding = {
-  status: false
-};
-var autoBuilder = autoBuilderConstructor(buildList,rootUrl, autoBuilding);
-console.log(buildList);
+var buildHash = getBuildList();
+var autoBuildCtrl = {};
+
+console.log(buildHash);
+
+
 
 
 chrome.extension.onMessage.addListener(function (request, sender, sendResponse) {
     switch (request.type) {
         case "tb-add-to-queue":
-            buildList.push(request.data);
-            setBuildList(buildList);
+            Utils.addToQueueAndSave(request,buildHash);
             break;
+
         case "tb-remove-from-queue":
-            Utils.removeElementFromList(buildList,request.data.id);
-            setBuildList(buildList);
+            Utils.removeFromQueueAndSave(request, buildHash);
             break;
+
         case "tb-get-queue-list":
+            var currentVillage = buildHash[request.data.villageId];
             sendMessage("tb-send-queue-list", {
-                buildList: buildList,
-                isLoopActive: autoBuilding.status
+                buildList   : (currentVillage) ? currentVillage.buildQueue : [],
+                isLoopActive: (currentVillage) ? currentVillage.isLoop : false
             });
             break;
-        case "tb-trigger-auto-building":
-            autoBuilding.status = request.data.isLoopActive;
-            if(autoBuilding.status){
-                autoBuilder.notifyUser("info", 'auto-building', 'started');
-                autoBuilder.start(request.data.timer);
-            } else {
-                autoBuilder.notifyUser("info", 'auto-building', 'stopped');
-                autoBuilder.stop();
-            }
+
+      case "tb-trigger-auto-building":
+            Utils.triggerAutoBuilding(autoBuildCtrl, request, buildHash, rootUrl);
             break;
     }
     return true;
 });
-
-
-

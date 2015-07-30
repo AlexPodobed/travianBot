@@ -2,6 +2,10 @@ console.info('utils fired');
 
 var Utils = (function(){
 
+    function getTemplate(name){
+      var templateUrl = chrome.extension.getURL("templates/"+name+".html");
+      return jQuery.get(templateUrl);
+    }
     function matchUrl(pathname, search, callback){
         var expression1 = (pathname) ? (location.pathname.indexOf(pathname) >= 0) : true ;
         var expression2 = (search) ? (location.search.indexOf(search) >= 0) : true ;
@@ -112,14 +116,60 @@ var Utils = (function(){
       });
     }
     function getBuildList(){
-      return JSON.parse(localStorage.getItem('build_list')) || [];
+      return JSON.parse(localStorage.getItem('tb-village-hash')) || {};
     }
-    function setBuildList(arr){
-      var arrToStr = JSON.stringify(arr);
-      localStorage.setItem('build_list', arrToStr);
+    function setBuildList(obj){
+      var objToStr = JSON.stringify(obj);
+      localStorage.setItem('tb-village-hash', objToStr);
+    }
+    function addToQueueAndSave(request, buildHash){
+      var currentVillage = buildHash[request.data.villageId];
+
+      if(!currentVillage){
+        console.log('didnt exist');
+        currentVillage = {
+          name: request.data.villageName,
+          isLoop: false,
+          buildQueue: []
+        };
+        buildHash[request.data.villageId] = currentVillage;
+      }
+
+      currentVillage.buildQueue.push(request.data.buildDetails);
+      setBuildList(buildHash);
+    }
+    function removeFromQueueAndSave(request, buildHash){
+      var currentBuildQueue = buildHash[request.data.villageId].buildQueue;
+      removeElementFromList(currentBuildQueue,request.data.buildId);
+      setBuildList(buildHash);
+    }
+    function triggerAutoBuilding(autoBuildCtrl, request, buildHash, rootUrl){
+      var currentVillageId = request.data.villageId;
+      var currentBuildControls = autoBuildCtrl[currentVillageId];
+
+      buildHash[currentVillageId].isLoop = request.data.isLoopActive;
+      setBuildList(buildHash);
+
+      if(!currentBuildControls){
+        console.log('autoBuildCtrl: created new')
+        currentBuildControls = {
+          instance: autoBuilderConstructor(buildHash, rootUrl, currentVillageId)
+        };
+        autoBuildCtrl[currentVillageId] = currentBuildControls;
+      }
+      var instance = autoBuildCtrl[currentVillageId].instance;
+      if(buildHash[currentVillageId].isLoop){
+        instance.notifyUser("info", buildHash[currentVillageId].name, 'auto-building started');
+        instance.start(request.data.timer);
+      } else {
+        instance.notifyUser("info", buildHash[currentVillageId].name, 'auto-building stopped');
+        instance.stop();
+      }
     }
 
+
     return {
+        getTemplate:getTemplate,
         matchUrl: matchUrl,
         sendMessage: sendMessage,
         onMessage: onMessage,
@@ -131,6 +181,9 @@ var Utils = (function(){
         getResourceFuildhash: getResourceFuildhash,
         sendMessageFromBG: sendMessageFromBG,
         getBuildList: getBuildList,
-        setBuildList: setBuildList
+        setBuildList: setBuildList,
+        addToQueueAndSave: addToQueueAndSave,
+        removeFromQueueAndSave: removeFromQueueAndSave,
+        triggerAutoBuilding: triggerAutoBuilding
     }
 })();

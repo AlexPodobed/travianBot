@@ -57,3 +57,43 @@
     background-color: #fff;
     font-size: 10px;
 }
+
+#tb-build-list .boxTitle{
+  padding-top: 15px;
+}
+#tb-build-list .content ul li{
+  padding-right: 15px;
+  padding-left: 10px;
+  position: relative;
+}
+#tb-build-list .content ul li > a{
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#tb-build-list .content ul li > span{
+  cursor: pointer;
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  font-weight: bold;
+  font-size: 10px;
+  padding: 2px 2px;
+  line-height: 10px;
+}
+
+#tb-build-list .btn-wrapper{
+  text-align: center;
+  margin-top: 10px;
+}
+#tb-build-list .footer{
+  height: 10px;
+}
+
+.tb-button-container:hover .button-content {
+  color: #506030;
+}
+.tb-button-container:hover .button-background div {
+  background-image: url(http://gpack.travian.com/59/img/round/button/background/greenHover.png) !important;
+}
