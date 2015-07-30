@@ -124,7 +124,13 @@ var Build = (function () {
         var timeToWait = jQuery(".buildingList #timer1").text() || "00:00:00";
         isLoopActive = !isLoopActive;
         generateBuildingsList();
-        sendMessage("tb-trigger-auto-building", {
+      /*  sendMessage("tb-trigger-auto-building", {
+          villageId: activeVillageID,
+          isLoopActive: isLoopActive,
+          timer: timeToWait
+        });*/
+
+        socket.emit("trigger-auto-building", {
           villageId: activeVillageID,
           isLoopActive: isLoopActive,
           timer: timeToWait
