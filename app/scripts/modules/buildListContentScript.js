@@ -54,8 +54,7 @@ var Build = (function () {
         var buildToRemove = Utils.removeElementFromList(buildQueue,id);
 
         if(buildToRemove){
-          sendMessage("tb-remove-from-queue", {villageId: activeVillageID, buildId: buildToRemove.id});
-          socket.emit('remove-from-queue', {villageId: activeVillageID, buildId: buildToRemove.id})
+          socket.emit('remove-from-queue', {villageId: activeVillageID, buildId: buildToRemove.id});
           generateBuildingsList();
         }
     }
@@ -119,18 +118,13 @@ var Build = (function () {
     function triggerAutoBuilding(){
 
       if(location.pathname.indexOf('dorf') < 0){
-        toastr['warning']("You should go to /dorf2.php or /dorf1.php", "Change location!");
+        toastr['warning']('You should go to /dorf2.php or /dorf1.php', 'Change location!');
       }else {
-        var timeToWait = jQuery(".buildingList #timer1").text() || "00:00:00";
+        var timeToWait = jQuery('.buildingList #timer1').text() || '00:00:00';
         isLoopActive = !isLoopActive;
         generateBuildingsList();
-      /*  sendMessage("tb-trigger-auto-building", {
-          villageId: activeVillageID,
-          isLoopActive: isLoopActive,
-          timer: timeToWait
-        });*/
 
-        socket.emit("trigger-auto-building", {
+        socket.emit('trigger-auto-building', {
           villageId: activeVillageID,
           isLoopActive: isLoopActive,
           timer: timeToWait
@@ -138,28 +132,22 @@ var Build = (function () {
       }
     }
     function addMessageListeners(){
-      onMessage('tb-send-queue-list', function (request) {
-        console.log("init: ",request)
-        buildQueue   = request.data.buildList;
-        isLoopActive = request.data.isLoopActive;
-        generateBuildingsList();
-        highlightFields();
-      });
-      onMessage('tb-remove-from-list', function (request) {
-        Utils.removeElementFromList(buildQueue,request.data.id);
-        generateBuildingsList();
-      });
-      onMessage('tb-auto-build-event', function(request){
-        toastr[request.data.type](request.data.message, request.data.title);
-      });
-
 
       socket.on('get-info', function(data){
         console.log('get-info', data);
       });
 
       socket.on('get-queue-list', function(data){
+
         console.log('get-queue-list', data);
+        buildQueue   = data.buildList;
+        isLoopActive = data.isLoop;
+        generateBuildingsList();
+        highlightFields();
+      });
+
+      socket.on('auto-build-event', function(data){
+        toastr[data.type](data.message, data.title);
       });
 
 
@@ -175,6 +163,6 @@ var Build = (function () {
         renderAddtoQueueBtn: renderAddtoQueueBtn,
         generateList: generateBuildingsList,
         init: init
-    }
+    };
 }());
 

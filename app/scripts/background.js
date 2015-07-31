@@ -22,7 +22,7 @@ var autoBuildCtrl = {};
 
 console.log(buildHash);
 
-
+console.log(12)
 
 
 chrome.extension.onMessage.addListener(function (request, sender, sendResponse) {
