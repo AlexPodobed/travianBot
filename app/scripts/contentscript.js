@@ -3,7 +3,7 @@
 console.info('content script loaded');
 
 var matchUrl = Utils.matchUrl;
-var socket = io('http://travian-podobed.rhcloud.com/');
+var socket = io('http://localhost:3000/');
 
 matchUrl('build.php', '', Build.renderAddtoQueueBtn);
 matchUrl('', '', function(){

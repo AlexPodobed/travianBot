@@ -7,8 +7,6 @@ var Build = (function () {
         isLoopActive,
         template;
 
-    var sendMessage = Utils.sendMessage;
-    var onMessage = Utils.onMessage;
     var getIdformUrl = Utils.getIdformUrl;
     template = {};
 
@@ -18,7 +16,6 @@ var Build = (function () {
       activeVillageName = $activeVillage.find('.name').text();
     }
     function getQueueList() {
-        sendMessage("tb-get-queue-list", {villageId: activeVillageID});
         socket.emit('get-queue-list', {villageId: activeVillageID});
         socket.emit('get-info');
     }
@@ -71,7 +68,6 @@ var Build = (function () {
         }
       };
       buildQueue.push(obj.buildDetails);
-      sendMessage("tb-add-to-queue", obj);
       socket.emit('add-to-queue', obj);
       generateBuildingsList();
     }
@@ -116,13 +112,11 @@ var Build = (function () {
         });
     }
     function triggerAutoBuilding(){
-
       if(location.pathname.indexOf('dorf') < 0){
         toastr['warning']('You should go to /dorf2.php or /dorf1.php', 'Change location!');
       }else {
         var timeToWait = jQuery('.buildingList #timer1').text() || '00:00:00';
         isLoopActive = !isLoopActive;
-        generateBuildingsList();
 
         socket.emit('trigger-auto-building', {
           villageId: activeVillageID,
@@ -133,12 +127,27 @@ var Build = (function () {
     }
     function addMessageListeners(){
 
+      socket.on('remove-from-list', function (data) {
+        console.log("remove-from-list",data, activeVillageID);
+        if(data.villageId == activeVillageID){
+          Utils.removeElementFromList(buildQueue, data.buildId);
+          generateBuildingsList();
+        }
+      });
+
+      socket.on('add-to-queue-all', function(data){
+        if(data.villageId == activeVillageID){
+          buildQueue   = data.buildList;
+          generateBuildingsList();
+          highlightFields();
+        }
+      });
+
       socket.on('get-info', function(data){
         console.log('get-info', data);
       });
 
       socket.on('get-queue-list', function(data){
-
         console.log('get-queue-list', data);
         buildQueue   = data.buildList;
         isLoopActive = data.isLoop;
@@ -150,7 +159,13 @@ var Build = (function () {
         toastr[data.type](data.message, data.title);
       });
 
-
+      socket.on('trigger-auto-building', function(data){
+        console.log("trigger-auto-building", data, activeVillageID)
+        if(data.villageId == activeVillageID){
+          isLoopActive = data.isLoopActive;
+          generateBuildingsList();
+        }
+      })
     }
 
     function init() {
