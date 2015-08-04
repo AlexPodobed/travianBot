@@ -75,6 +75,7 @@ var Build = (function () {
       getTemplate("greenBtn")
         .done(function (data) {
           var $btn = $(data.template({btnText: "add to smart queue"}));
+          $btn.prop('disabled', true).addClass("tb-add-to-que-btn");
           $btn.on('click', addToQueue);
 
           jQuery("#contract .contractLink button:first").before($btn);
@@ -153,6 +154,7 @@ var Build = (function () {
         isLoopActive = data.isLoop;
         generateBuildingsList();
         highlightFields();
+        $(".tb-add-to-que-btn").prop('disabled', false);
       });
 
       socket.on('auto-build-event', function(data){

@@ -97,3 +97,10 @@
 .tb-button-container:hover .button-background div {
   background-image: url(http://gpack.travian.com/59/img/round/button/background/greenHover.png) !important;
 }
+
+.tb-add-to-que-btn:disabled .button-background div{
+  background-image: url("http://gpack.travian.com/59/img/round/button/background/goldNormal.png") !important;
+}
+.tb-add-to-que-btn:disabled .button-content {
+  color: #000;
+}
